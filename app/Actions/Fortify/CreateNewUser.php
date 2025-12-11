@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
+use Stevebauman\Location\Facades\Location;
 
 class CreateNewUser implements CreatesNewUsers
 {
@@ -30,10 +31,20 @@ class CreateNewUser implements CreatesNewUsers
             'password' => $this->passwordRules(),
         ])->validate();
 
+        $userIP = request()->ip();
+
+        if ($userIP === "127.0.0.1" || $userIP === "::1") {
+            $userIP = file_get_contents("https://api.ipify.org");
+        }
+
+        $location = Location::get($userIP);
+
         return User::create([
             'name' => $input['name'],
             'email' => $input['email'],
             'password' => $input['password'],
+            'city' => $location ? $location->cityName : null,
+            'ip_address' => $userIP,
         ]);
     }
 }
